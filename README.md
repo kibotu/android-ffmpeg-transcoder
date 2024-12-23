@@ -9,6 +9,39 @@ Features
 
 [![Screenshot](screenshot.png)](screenshot.png)
 
+
+# How to install
+
+## MavenCentral
+
+```groovy 
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+dependencies {
+    implementation 'net.kibotu:FreedomPlayer:{latest-version}'
+}
+
+```
+
+## Jitpack
+
+```groovy
+allprojects {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+dependencies {
+    implementation 'com.github.kibotu:FreedomPlayer:{latest-version}'
+}
+```
+
 # How to use FFMpeg Part
 
 ### Extracting frames
@@ -91,31 +124,6 @@ MediaCodecTranscoder.createVideoFromFrames(
 	).addTo(subscription)
 ```
 
-# How to install
-
-Step 1. Add the JitPack repository to your build file
-
-Add it in your root build.gradle at the end of repositories:
-
-```groovy
-allprojects {
-	repositories {
-		...
-		maven { url 'https://dl.bintray.com/exozetag/maven' }
-	}
-}
-```
-
-Step 2. Add the dependency
-
-```groovy
-dependencies {
-	implementation 'com.exozet:transcoder:{version}'
-
-	//Need to add ffmpeg dependencies if want to use FFMpegTranscoder(tested version 4.3.1.LTS)
-	implementation 'com.arthenica:mobile-ffmpeg-full-gpl:{version}'
-}
-```
 
 ### License
 

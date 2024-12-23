@@ -1,39 +1,32 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
 
 android {
+    namespace "net.kibotu.androidffmpegtranscoder"
 
-    namespace "net.kibotu.androidffmpegtranscoder.demo"
     compileSdk compileSdkVer
     buildToolsVersion = buildToolsVer
 
     defaultConfig {
-        applicationId "net.kibotu.androidffmpegtranscoder.demo"
+
         minSdk minSdkVer
         targetSdk targetSdkVer
-        versionName version
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
 
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: 'true'
+    }
 
     buildTypes {
         debug {
-            pseudoLocalesEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled false
-            shrinkResources = false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', '../proguard-debug.pro'
         }
         release {
-            minifyEnabled true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', '../proguard-release.pro'
         }
     }
 
-    buildFeatures {
-        viewBinding true
-    }
 
     // region java compile options
 
@@ -98,14 +91,25 @@ android {
 
 dependencies {
     coreLibraryDesugaring desugaring.jdk
-    implementation project(':android-ffmpeg-transcoder')
-    implementation libs.supportAppCompat
-    implementation libs.material
-    implementation libs.numberProgressBar
+
+    implementation libs.annotations
     implementation libs.rx2java
     implementation libs.rx2Android
-    implementation libs.streamingAndroidLogger
-
-
+    implementation libs.mobileFfmpeg
 }
 
+if (isJitpack) {
+    apply plugin: 'maven-publish'
+    afterEvaluate {
+        publishing {
+            publications {
+                release(MavenPublication) {
+                    from components.release
+                    groupId = GROUP
+                    artifactId = POM_ARTIFACT_ID
+                    version = version
+                }
+            }
+        }
+    }
+}
