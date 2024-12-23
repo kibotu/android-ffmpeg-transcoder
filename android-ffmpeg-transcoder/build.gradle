@@ -98,6 +98,14 @@ dependencies {
     implementation libs.mobileFfmpeg
 }
 
+if (!isJitpack) {
+    apply plugin: 'com.vanniktech.maven.publish'
+    mavenPublishing {
+        publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL, true)
+        signAllPublications()
+    }
+}
+
 if (isJitpack) {
     apply plugin: 'maven-publish'
     afterEvaluate {
