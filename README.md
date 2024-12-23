@@ -1,4 +1,6 @@
-# AndroidVideoTranscoder [![Build Status](https://app.bitrise.io/app/09accd151a795e36/status.svg?token=qOMQISBTgdxyqBD6NSOzTg)](https://app.bitrise.io/app/09accd151a795e36) [ ![Download](https://api.bintray.com/packages/exozetag/maven/VideoTranscoder/images/download.svg) ](https://bintray.com/exozetag/maven/VideoTranscoder/_latestVersion) [![](https://jitpack.io/v/exozet/AndroidVideoTranscoder/month.svg)](https://jitpack.io/#exozet/AndroidVideoTranscoder) [![Hits-of-Code](https://hitsofcode.com/github/exozet/AndroidVideoTranscoder)](https://hitsofcode.com/view/github/exozet/AndroidVideoTranscoder) [![Javadoc](https://img.shields.io/badge/javadoc-SNAPSHOT-green.svg)](https://jitpack.io/com/github/exozet/AndroidVideoTranscoder/master-SNAPSHOT/javadoc/index.html)  [![API](https://img.shields.io/badge/API-21%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=21) [![Gradle Version](https://img.shields.io/badge/gradle-5.6.1-green.svg)](https://docs.gradle.org/current/release-notes) [![Kotlin](https://img.shields.io/badge/kotlin-1.3.50-green.svg)](https://kotlinlang.org/) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![androidx](https://img.shields.io/badge/androidx-brightgreen.svg)](https://developer.android.com/topic/libraries/support-library/refactor)
+# Android Video Transcoder
+
+[![Maven Central Version](https://img.shields.io/maven-central/v/net.kibotu/android-ffmpeg-transcoder)](https://central.sonatype.com/artifact/net.kibotu/android-ffmpeg-transcoder) [![](https://jitpack.io/v/kibotu/android-ffmpeg-transcoder.svg)](https://jitpack.io/#kibotu/android-ffmpeg-transcoder) [![Android CI](https://github.com/kibotu/android-ffmpeg-transcoder/actions/workflows/android.yml/badge.svg)](https://github.com/kibotu/android-ffmpeg-transcoder/actions/workflows/android.yml) [![API](https://img.shields.io/badge/Min%20API-21%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=21) [![API](https://img.shields.io/badge/Target%20API-35%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=35) [![API](https://img.shields.io/badge/Java-17-brightgreen.svg?style=flat)](https://www.oracle.com/java/technologies/javase/17all-relnotes.html) [![Gradle Version](https://img.shields.io/badge/gradle-8.11.1-green.svg)](https://docs.gradle.org/current/release-notes) [![Kotlin](https://img.shields.io/badge/kotlin-2.1.0-green.svg)](https://kotlinlang.org/)
 
 Surprisingly fast on device video transcoding.
 
@@ -8,7 +10,6 @@ Features
 - creating video from image either ffmpeg or mediacodec
 
 [![Screenshot](screenshot.png)](screenshot.png)
-
 
 # How to install
 
@@ -22,7 +23,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'net.kibotu:FreedomPlayer:{latest-version}'
+    implementation 'net.kibotu:android-ffmpeg-transcoder:{latest-version}'
 }
 
 ```
@@ -38,7 +39,7 @@ allprojects {
 }
 
 dependencies {
-    implementation 'com.github.kibotu:FreedomPlayer:{latest-version}'
+    implementation 'com.github.kibotu:android-ffmpeg-transcoder:{latest-version}'
 }
 ```
 
