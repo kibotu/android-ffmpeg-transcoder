@@ -1,89 +1,115 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'com.getkeepsafe.dexcount'
 
 android {
+    namespace "com.exozet.transcoder"
 
-    compileSdkVersion compileSdkVer
-    buildToolsVersion buildToolsVer
+    compileSdk compileSdkVer
+    buildToolsVersion = buildToolsVer
 
     defaultConfig {
 
-        minSdkVersion 18
-        targetSdkVersion targetSdkVer
-        versionCode 1
-        versionName "1.0"
+        minSdk minSdkVer
+        targetSdk targetSdkVer
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
     }
 
     buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', '../proguard-debug.pro'
+        }
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', '../proguard-release.pro'
         }
     }
 
-    // region java compiler flags
+
+    // region java compile options
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // endregion
+
+    // region kotlin compile options
+
+    kotlinOptions {
+        jvmTarget = "17"
+        allWarningsAsErrors = false
+        kotlinOptions.verbose = true
+        freeCompilerArgs += [
+                "-Xjvm-default=all-compatibility"
+        ]
     }
 
     // endregion
 
     // region lint options
 
-    lintOptions {
-        disable 'InvalidPackage'
-        abortOnError false        // true by default
+    lint {
+        disable 'TypographyFractions', 'TypographyQuotes', 'InvalidPackage'
+        enable 'RtlHardcoded', 'RtlCompat', 'RtlEnabled'
+        checkOnly 'NewApi', 'InlinedApi'
+        quiet true
+        abortOnError false
+        ignoreWarnings true
+        checkDependencies true
+        ignoreTestSources true
         checkAllWarnings false
-        checkReleaseBuilds false
-        ignoreWarnings true       // false by default
-        quiet true                // false by default
     }
 
     // endregion
 
-    // region dex options
+    // region exclude duplicated meta inf files
 
-    dexOptions {
-        javaMaxHeapSize "4g"
-        maxProcessCount 8
-    }
+    packagingOptions {
+        // DebugProbesKt.bin is used for java debugging (not needed for android)
+        // Hint: https://github.com/Kotlin/kotlinx.coroutines/issues/2274
+        exclude 'DebugProbesKt.bin'
 
-    // endregion
-
-    // region adb options
-
-    adbOptions {
-        timeOutInMs 10 * 60 * 1000 // 10 minutes
+        excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        // https://stackoverflow.com/a/61893957/1006741
+        excludes -= "/META-INF/*.kotlin_module"
     }
 
     // endregion
 }
 
 dependencies {
-    implementation libs.kotlinJdk8
-    implementation libs.supportAnnotations
+    coreLibraryDesugaring desugaring.jdk
 
+    implementation libs.annotations
     implementation libs.rx2java
     implementation libs.rx2Android
-    implementation libs.rx2Kotlin
-    compileOnly "com.arthenica:mobile-ffmpeg-full-gpl:4.3.1.LTS"
+    implementation libs.mobileFfmpeg
 }
 
-configurations.all {
-    resolutionStrategy.cacheDynamicVersionsFor 10, 'minutes'
-
-    resolutionStrategy.force libs.kotlinJdk8
-    resolutionStrategy.force libs.supportAnnotations
+if (isJitpack) {
+    apply plugin: 'maven-publish'
+    afterEvaluate {
+        publishing {
+            publications {
+                release(MavenPublication) {
+                    from components.release
+                    groupId = GROUP
+                    artifactId = POM_ARTIFACT_ID
+                    version = version
+                }
+            }
+        }
+    }
 }
-
-apply from: "${project.rootDir}/Android-Dependencies/javadoc.gradle"
-
-    apply from: "${project.rootDir}/Android-Dependencies/bintray.gradle"

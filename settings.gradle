@@ -1,2 +1,2 @@
-include ':app', ':transcoder'
-rootProject.name='Video Editor'
+include ':app'
+include ':transcoder'

@@ -60,13 +60,13 @@ data class EncodingConfig(
      * -framerate input Frame rate of the video.
      * https://lists.ffmpeg.org/pipermail/ffmpeg-user/2013-July/016273.html
      */
-    val sourceFrameRate: Float? = 30000f/1001f,
+    val sourceFrameRate: Float? = 30000f / 1001f,
 
     /**
      * -r output Frame rate of the video.
      * https://video.stackexchange.com/a/13074
      */
-    val outputFrameRate: Float? = 30000f/1001f,
+    val outputFrameRate: Float? = 30000f / 1001f,
 
     /**
      * pix_fmts

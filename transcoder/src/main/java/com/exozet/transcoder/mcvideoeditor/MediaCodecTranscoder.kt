@@ -3,10 +3,8 @@ package com.exozet.transcoder.mcvideoeditor
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.annotation.IntRange
 import com.exozet.transcoder.ffmpeg.Progress
-import com.exozet.transcoder.ffmpeg.log
 import io.reactivex.Observable
 import java.io.File
 
@@ -32,7 +30,12 @@ object MediaCodecTranscoder {
         if (!file.exists())
             file.mkdirs()
 
-        return mediaCodec.extractMpegFrames(inputVideo, frameTimes, Uri.parse(localSavePath), photoQuality)
+        return mediaCodec.extractMpegFrames(
+            inputVideo,
+            frameTimes,
+            Uri.parse(localSavePath),
+            photoQuality
+        )
     }
 
     fun createVideoFromFrames(
@@ -42,8 +45,8 @@ object MediaCodecTranscoder {
         deleteFramesOnComplete: Boolean = true
     ): Observable<Progress> {
 
-        var mediaCodecCreateVideo : MediaCodecCreateVideo? = null
-        val shouldCancel =  MediaCodecExtractImages.Cancelable()
+        var mediaCodecCreateVideo: MediaCodecCreateVideo? = null
+        val shouldCancel = MediaCodecExtractImages.Cancelable()
 
         return Observable.create<Progress> { emitter ->
 
@@ -51,15 +54,23 @@ object MediaCodecTranscoder {
                 return@create
 
             val items = File(frameFolder.path!!).listFiles()?.sorted() ?: return@create
-            
+
             mediaCodecCreateVideo = MediaCodecCreateVideo(config)
 
-            val firstFrame = BitmapFactory.decodeFile(items.firstOrNull()?.absolutePath ?: return@create)
+            val firstFrame =
+                BitmapFactory.decodeFile(items.firstOrNull()?.absolutePath ?: return@create)
 
-            mediaCodecCreateVideo!!.startEncoding(items,firstFrame.width, firstFrame.height, outputUri, shouldCancel, emitter)
+            mediaCodecCreateVideo!!.startEncoding(
+                items,
+                firstFrame.width,
+                firstFrame.height,
+                outputUri,
+                shouldCancel,
+                emitter
+            )
 
             if (!firstFrame.isRecycled) firstFrame.recycle()
-            
+
         }.doOnDispose {
             shouldCancel.cancel.set(true)
             mediaCodecCreateVideo = null

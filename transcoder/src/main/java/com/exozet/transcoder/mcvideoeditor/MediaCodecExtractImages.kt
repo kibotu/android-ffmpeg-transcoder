@@ -16,47 +16,19 @@ package com.exozet.transcoder.mcvideoeditor
  * limitations under the License.
  */
 
-import android.graphics.Bitmap
-import android.graphics.SurfaceTexture
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
-import android.opengl.EGL14
-import android.opengl.EGLConfig
-import android.opengl.EGLContext
-import android.opengl.EGLDisplay
-import android.opengl.EGLSurface
-import android.opengl.GLES11Ext
-import android.opengl.GLES20
-import android.opengl.Matrix
-import android.os.Build
-import android.os.Handler
-import android.os.HandlerThread
-import android.util.Log
-import android.view.Surface
-import com.exozet.transcoder.ffmpeg.FFMpegTranscoder
-
 import com.exozet.transcoder.ffmpeg.Progress
-
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.FloatBuffer
-import java.util.ArrayList
-import java.util.concurrent.atomic.AtomicBoolean
-
+import com.exozet.transcoder.ffmpeg.log
 import io.reactivex.Observable
 import io.reactivex.ObservableEmitter
-import io.reactivex.ObservableOnSubscribe
-import io.reactivex.Observer
-import io.reactivex.functions.Action
-
-import com.exozet.transcoder.ffmpeg.log
+import java.io.File
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.util.ArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 
 //20131122: minor tweaks to saveFrame() I/O
 //20131205: add alpha to EGLConfig (huge glReadPixels speedup); pre-allocate pixel buffers;
@@ -105,7 +77,7 @@ class MediaCodecExtractImages {
         var outputSurface: CodecOutputSurface? = null
         var extractor: MediaExtractor? = null
 
-        return Observable.create<Progress>{ emitter ->
+        return Observable.create<Progress> { emitter ->
             val inputFilePath = inputVideo.path
             val outputPath = outputDir.path
 
@@ -115,70 +87,70 @@ class MediaCodecExtractImages {
             if (emitter.isDisposed)
                 return@create
 
-                val inputFile = File(inputFilePath!!)   // must be an absolute path
-                // The MediaExtractor error messages aren't very useful.  Check to see if the input
-                // file exists so we can throw a better one if it's not there.
-                if (!inputFile.canRead()) {
-                    emitter.onError(FileNotFoundException("Unable to read $inputFile"))
-                }
+            val inputFile = File(inputFilePath!!)   // must be an absolute path
+            // The MediaExtractor error messages aren't very useful.  Check to see if the input
+            // file exists so we can throw a better one if it's not there.
+            if (!inputFile.canRead()) {
+                emitter.onError(FileNotFoundException("Unable to read $inputFile"))
+            }
 
-                extractor = MediaExtractor()
-                extractor!!.setDataSource(inputFile.toString())
-                val trackIndex = selectTrack(extractor!!)
-                if (trackIndex < 0) {
-                    emitter.onError(RuntimeException("No video track found in $inputFile"))
-                }
-                extractor!!.selectTrack(trackIndex)
+            extractor = MediaExtractor()
+            extractor!!.setDataSource(inputFile.toString())
+            val trackIndex = selectTrack(extractor!!)
+            if (trackIndex < 0) {
+                emitter.onError(RuntimeException("No video track found in $inputFile"))
+            }
+            extractor!!.selectTrack(trackIndex)
 
-                val format = extractor!!.getTrackFormat(trackIndex)
+            val format = extractor!!.getTrackFormat(trackIndex)
 
-                saveWidth = format.getInteger(MediaFormat.KEY_WIDTH)
-                saveHeight = format.getInteger(MediaFormat.KEY_HEIGHT)
-                log(
-                    "Video size is " + format.getInteger(MediaFormat.KEY_WIDTH) + "x" +
-                            format.getInteger(MediaFormat.KEY_HEIGHT)
-                )
+            saveWidth = format.getInteger(MediaFormat.KEY_WIDTH)
+            saveHeight = format.getInteger(MediaFormat.KEY_HEIGHT)
+            log(
+                "Video size is " + format.getInteger(MediaFormat.KEY_WIDTH) + "x" +
+                        format.getInteger(MediaFormat.KEY_HEIGHT)
+            )
 
-                val frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE)
-                val duration = format.getLong(MediaFormat.KEY_DURATION)
+            val frameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE)
+            val duration = format.getLong(MediaFormat.KEY_DURATION)
 
-                val secToMicroSec = 1000000
-                val totalFrame = (duration * frameRate / secToMicroSec).toInt()
+            val secToMicroSec = 1000000
+            val totalFrame = (duration * frameRate / secToMicroSec).toInt()
 
-                log(
-                    "Frame rate is = " + frameRate +
-                            " Total duration is in microSec = " + duration +
-                            " Total frame count = " + totalFrame
-                )
+            log(
+                "Frame rate is = " + frameRate +
+                        " Total duration is in microSec = " + duration +
+                        " Total frame count = " + totalFrame
+            )
 
-                //Can't use timeStamp directly, instead we need to get which frame we need to get
-                val desiredFrames = getDesiredFrames(timeInSec, frameRate)
+            //Can't use timeStamp directly, instead we need to get which frame we need to get
+            val desiredFrames = getDesiredFrames(timeInSec, frameRate)
 
-                 log("Desired frames list is $desiredFrames")
-                // Could use width/height from the MediaFormat to get full-size frames.
-                outputSurface = CodecOutputSurface(saveWidth, saveHeight)
+            log("Desired frames list is $desiredFrames")
+            // Could use width/height from the MediaFormat to get full-size frames.
+            outputSurface = CodecOutputSurface(saveWidth, saveHeight)
 
-                // Create a MediaCodec decoder, and configure it with the MediaFormat from the
-                // extractor.  It's very important to use the format from the extractor because
-                // it contains a copy of the CSD-0/CSD-1 codec-specific data chunks.
-                val mime = format.getString(MediaFormat.KEY_MIME)
-                decoder = MediaCodec.createDecoderByType(mime!!)
-                decoder?.configure(format, outputSurface!!.surface, null, 0)
-                decoder?.start()
+            // Create a MediaCodec decoder, and configure it with the MediaFormat from the
+            // extractor.  It's very important to use the format from the extractor because
+            // it contains a copy of the CSD-0/CSD-1 codec-specific data chunks.
+            val mime = format.getString(MediaFormat.KEY_MIME)
+            decoder = MediaCodec.createDecoderByType(mime!!)
+            decoder?.configure(format, outputSurface!!.surface, null, 0)
+            decoder?.start()
 
-                doExtract(
-                    extractor!!,
-                    trackIndex,
-                    decoder!!,
-                    outputSurface!!,
-                    desiredFrames,
-                    outputPath,
-                    photoQuality,
-                    emitter,
-                    totalFrame,
-                    startTime,
-                    cancelable
-                )
+            doExtract(
+                extractor!!,
+                trackIndex,
+                decoder!!,
+                outputSurface!!,
+                desiredFrames,
+                outputPath,
+                photoQuality,
+                emitter,
+                totalFrame,
+                startTime,
+                cancelable
+            )
 
         }.doOnDispose {
             cancelable.cancel.set(true)

@@ -1,30 +1,28 @@
 package com.exozet.transcoder.ffmpeg.demo
 
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import androidx.fragment.app.FragmentActivity
-import com.exozet.android.core.extensions.onClick
-import com.exozet.android.core.extensions.parseExternalStorageFile
 import com.exozet.transcoder.ffmpeg.Progress
+import com.exozet.transcoder.ffmpeg.demo.databinding.ActivityDemoBinding
 import com.exozet.transcoder.mcvideoeditor.MediaCodecTranscoder
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
-import kotlinx.android.synthetic.main.activity_demo.*
-import net.kibotu.logger.LogcatLogger
 import net.kibotu.logger.Logger
-import net.kibotu.logger.Logger.logv
 
 class DemoActivity : FragmentActivity() {
+
+    private lateinit var binding : ActivityDemoBinding
 
     var subscription: CompositeDisposable = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         subscription = CompositeDisposable()
-        setContentView(R.layout.activity_demo)
-
-        Logger.addLogger(LogcatLogger())
+        binding = ActivityDemoBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val frameFolder = "Download/process/".parseExternalStorageFile()
         val inputVideo = "Download/walkaround.mp4".parseExternalStorageFile()
@@ -35,7 +33,7 @@ class DemoActivity : FragmentActivity() {
             increment * it.toDouble()
         }
 
-        extract_frames.onClick {
+        binding.extractFrames.setOnClickListener {
 
             var progress: Progress? = null
 
@@ -51,19 +49,19 @@ class DemoActivity : FragmentActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     {
-                        logv { "extractFramesFromVideo onNext $it" }
+                        Logger.v( "extractFramesFromVideo onNext $it" )
                         progress = it
 
-                        extract_frames_progress.progress = it.progress
+                        binding.extractFramesProgress.setProgress(it.progress)
                     },
                     {
-                        logv { "extractFramesFromVideo onError ${it.localizedMessage}" }
+                        Logger.v( "extractFramesFromVideo onError ${it.localizedMessage}" )
                     },
-                    { logv { "extractFramesFromVideo onComplete $progress" } }
+                    {  Logger.v( "extractFramesFromVideo onComplete $progress" ) }
                 ).addTo(subscription)
         }
 
-        merge_frames.onClick {
+       binding.mergeFrames.setOnClickListener {
 
             var progress: Progress? = null
 
@@ -76,19 +74,19 @@ class DemoActivity : FragmentActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     {
-                        logv { "createVideoFromFrames onNext $it" }
+                        Logger.v( "createVideoFromFrames onNext $it" )
                         progress = it
 
-                        merge_frames_progress.progress = it.progress
+                        binding.mergeFramesProgress.setProgress(it.progress)
                     },
                     {
-                        logv { "createVideoFromFrames onError ${it.localizedMessage}" }
+                        Logger.v( "createVideoFromFrames onError ${it.localizedMessage}" )
                     },
-                    { logv { "createVideoFromFrames onComplete $progress" } }
+                    { Logger.v( "createVideoFromFrames onComplete $progress" ) }
                 ).addTo(subscription)
         }
 
-        cancel.onClick {
+        binding.cancel.setOnClickListener {
             dispose()
         }
 
@@ -106,3 +104,6 @@ class DemoActivity : FragmentActivity() {
         subscription = CompositeDisposable()
     }
 }
+
+fun String.parseExternalStorageFile(): Uri =
+    Uri.parse("${Environment.getExternalStorageDirectory()}/$this")

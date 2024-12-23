@@ -1,15 +1,13 @@
 /**
  * Created by [Jan Rabe](https://about.me/janrabe).
  */
-
-@file:JvmName("DebugExtensions")
-
 package com.exozet.transcoder.ffmpeg
 
 import android.util.Log
-import com.exozet.transcoder.BuildConfig
+//import com.exozet.transcoder.BuildConfig
 
-internal val debug = BuildConfig.DEBUG
+//internal var debug = BuildConfig.DEBUG
+internal var debug = false // BuildConfig.DEBUG
 
 internal fun Any.log(message: String?) {
     if (debug)

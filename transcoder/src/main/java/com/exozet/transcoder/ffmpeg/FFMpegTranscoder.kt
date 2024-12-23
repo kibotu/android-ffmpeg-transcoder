@@ -30,7 +30,14 @@ object FFMpegTranscoder {
      * @param outputDir optional - output directory, if not provided internal storage will be used
      * @param photoQuality quality of extracted frames - Effective range for JPEG is 2-31 with 31 being the worst quality
      */
-    fun extractFramesFromVideo(context: Context, frameTimes: List<String>, inputVideo: Uri, id: String, outputDir: Uri?, @IntRange(from = 1, to = 31) photoQuality: Int = 5): Observable<Progress> {
+    fun extractFramesFromVideo(
+        context: Context,
+        frameTimes: List<String>,
+        inputVideo: Uri,
+        id: String,
+        outputDir: Uri?,
+        @IntRange(from = 1, to = 31) photoQuality: Int = 5
+    ): Observable<Progress> {
 
         val internalStoragePath: String = context.filesDir.absolutePath
 
@@ -90,8 +97,8 @@ object FFMpegTranscoder {
                     )
                 )
             }
-            Config.enableLogCallback {
-                    message -> log("FFMpeg Extract Frames Logger: ${message.text}")
+            Config.enableLogCallback { message ->
+                log("FFMpeg Extract Frames Logger: ${message.text}")
             }
             val rc: Int = FFmpeg.execute(cmd)
 
@@ -159,24 +166,52 @@ object FFMpegTranscoder {
             }.toTypedArray()
 
             Config.enableStatisticsCallback {
-                emitter.onNext(Progress(uri = outputUri, message = "", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
             }
-            Config.enableLogCallback {
-                    message -> log("FFMpeg Transcode Logger: ${message.text}")
+            Config.enableLogCallback { message ->
+                log("FFMpeg Transcode Logger: ${message.text}")
             }
             val rc: Int = FFmpeg.execute(cmd)
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
-                emitter.onNext(Progress(uri = outputUri, message = "Finished ${Arrays.toString(cmd)}", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "Finished ${Arrays.toString(cmd)}",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
                 emitter.onComplete()
 
             } else if (rc == Config.RETURN_CODE_CANCEL) {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 //delete failed process folder
                 deleteFolder(outputUri.path!!)
 
             } else {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 Config.printLastCommandOutput(Log.INFO)
             }
 
@@ -194,7 +229,12 @@ object FFMpegTranscoder {
      * @param [EncodingConfig] Encoding configurations.
      * @param deleteFramesOnComplete removes image sequence directory after successful completion.
      */
-    fun createVideoFromFrames(frameFolder: Uri, outputUri: Uri, config: EncodingConfig, deleteFramesOnComplete: Boolean = true): Observable<Progress> {
+    fun createVideoFromFrames(
+        frameFolder: Uri,
+        outputUri: Uri,
+        config: EncodingConfig,
+        deleteFramesOnComplete: Boolean = true
+    ): Observable<Progress> {
         return Observable.create<Progress> { emitter ->
 
             if (emitter.isDisposed) {
@@ -204,11 +244,11 @@ object FFMpegTranscoder {
             val percent = AtomicInteger()
 
             val total = try {
-                File(frameFolder.path).listFiles().size
+                File(frameFolder.path!!).listFiles()?.size
             } catch (e: Exception) {
                 e.printStackTrace()
                 0
-            }
+            } ?: 0
 
             val startTime = System.currentTimeMillis()
 
@@ -275,16 +315,35 @@ object FFMpegTranscoder {
             }.toTypedArray()
 
             Config.enableStatisticsCallback { newStatistics ->
-                percent.set(ceil((100.0 * newStatistics.videoFrameNumber / total)).coerceIn(0.0, 100.0).toInt())
-                emitter.onNext(Progress(uri = outputUri, message = "", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                percent.set(
+                    ceil((100.0 * newStatistics.videoFrameNumber / total)).coerceIn(
+                        0.0,
+                        100.0
+                    ).toInt()
+                )
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
             }
-            Config.enableLogCallback {
-                    message -> log(message.text)
+            Config.enableLogCallback { message ->
+                log(message.text)
             }
             val rc: Int = FFmpeg.execute(cmd)
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
-                emitter.onNext(Progress(uri = outputUri, message = "Finished ${Arrays.toString(cmd)}", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "Finished ${Arrays.toString(cmd)}",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
 
                 if (deleteFramesOnComplete) {
                     val deleteStatus = deleteFolder(frameFolder.path!!)
@@ -293,12 +352,26 @@ object FFMpegTranscoder {
                 emitter.onComplete()
 
             } else if (rc == Config.RETURN_CODE_CANCEL) {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 //delete failed process folder
                 deleteFolder(outputUri.path!!)
 
             } else {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 Config.printLastCommandOutput(Log.INFO)
             }
 
@@ -334,25 +407,55 @@ object FFMpegTranscoder {
 
             }.toTypedArray()
 
-            val c = "-i ${inputVideo.path} -threads ${Runtime.getRuntime().availableProcessors()} -vf [in]deflicker,dejudder[p0];[p0]vidstabdetect=stepsize=32:shakiness=10:accuracy=15:result=${transformsFile.path}[out] -f null -"
+            val c = "-i ${inputVideo.path} -threads ${
+                Runtime.getRuntime().availableProcessors()
+            } -vf [in]deflicker,dejudder[p0];[p0]vidstabdetect=stepsize=32:shakiness=10:accuracy=15:result=${transformsFile.path}[out] -f null -"
 
             Config.enableStatisticsCallback {
-                emitter.onNext(Progress(uri = Uri.EMPTY, message = "", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = Uri.EMPTY,
+                        message = "",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
             }
-            Config.enableLogCallback {
-                    message -> log("FFMpeg Analyze Logger: ${message.text}")
+            Config.enableLogCallback { message ->
+                log("FFMpeg Analyze Logger: ${message.text}")
             }
             val rc: Int = FFmpeg.execute(c)
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
-                emitter.onNext(Progress(uri = Uri.EMPTY, message = "Finished ${Arrays.toString(cmd)}", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = Uri.EMPTY,
+                        message = "Finished ${Arrays.toString(cmd)}",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
                 emitter.onComplete()
 
             } else if (rc == Config.RETURN_CODE_CANCEL) {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
 
             } else {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 Config.printLastCommandOutput(Log.INFO)
             }
 
@@ -392,24 +495,52 @@ object FFMpegTranscoder {
 
 
             Config.enableStatisticsCallback {
-                emitter.onNext(Progress(uri = outputUri, message = "", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
             }
-            Config.enableLogCallback {
-                    message -> log("FFMpeg Stabilize Logger: ${message.text}")
+            Config.enableLogCallback { message ->
+                log("FFMpeg Stabilize Logger: ${message.text}")
             }
             val rc: Int = FFmpeg.execute(cmd)
 
             if (rc == Config.RETURN_CODE_SUCCESS) {
-                emitter.onNext(Progress(uri = outputUri, message = "Finished ${Arrays.toString(cmd)}", progress = percent.get(), duration = System.currentTimeMillis() - startTime))
+                emitter.onNext(
+                    Progress(
+                        uri = outputUri,
+                        message = "Finished ${Arrays.toString(cmd)}",
+                        progress = percent.get(),
+                        duration = System.currentTimeMillis() - startTime
+                    )
+                )
                 emitter.onComplete()
 
             } else if (rc == Config.RETURN_CODE_CANCEL) {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 //delete failed process folder
                 deleteFolder(outputUri.path!!)
 
             } else {
-                emitter.onError(Throwable(String.format("Command execution failed with rc=%d and the output below.", rc)))
+                emitter.onError(
+                    Throwable(
+                        String.format(
+                            "Command execution failed with rc=%d and the output below.",
+                            rc
+                        )
+                    )
+                )
                 Config.printLastCommandOutput(Log.INFO)
             }
 
@@ -433,14 +564,16 @@ object FFMpegTranscoder {
     /**
      * Deletes all post processing images.
      */
-    fun deleteAllProcessFiles(context: Context): Boolean = deleteFolder("${context.filesDir.absolutePath}/postProcess/")
+    fun deleteAllProcessFiles(context: Context): Boolean =
+        deleteFolder("${context.filesDir.absolutePath}/postProcess/")
 
     /**
      * Deletes extracted frames directory.
      */
-    fun deleteExtractedFrameFolder(folderUri: Uri): Boolean = if (folderUri.path?.contains("postProcess") == true) {
-        deleteFolder(folderUri.path!!)
-    } else {
-        false
-    }
+    fun deleteExtractedFrameFolder(folderUri: Uri): Boolean =
+        if (folderUri.path?.contains("postProcess") == true) {
+            deleteFolder(folderUri.path!!)
+        } else {
+            false
+        }
 }
