@@ -25,8 +25,8 @@ class DemoActivity : FragmentActivity() {
         binding = ActivityDemoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val frameFolder = "transcoding/process/".parseInternalStorageFile(this)
-        val inputVideo = "example/source_video.mp4".parseInternalStorageFile(this)
+        val frameFolder = "transcoding/process".parseInternalStorageFile(this)
+        val inputVideo = "transcoding/input/source_video.mp4".parseInternalStorageFile(this)
         val outputVideo = "transcoding/output/output_${System.currentTimeMillis()}.mp4".parseInternalStorageFile(this)
 
         val increment = 63f / 120f
