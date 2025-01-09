@@ -1,5 +1,6 @@
 package net.kibotu.androidffmpegtranscoder.demo
 
+import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -24,9 +25,9 @@ class DemoActivity : FragmentActivity() {
         binding = ActivityDemoBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val frameFolder = "Download/process/".parseExternalStorageFile()
-        val inputVideo = "Download/walkaround.mp4".parseExternalStorageFile()
-        val outputVideo = "Download/output_${System.currentTimeMillis()}.mp4".parseExternalStorageFile()
+        val frameFolder = "transcoding/process/".parseInternalStorageFile(this)
+        val inputVideo = "example/source_video.mp4".parseInternalStorageFile(this)
+        val outputVideo = "transcoding/output/output_${System.currentTimeMillis()}.mp4".parseInternalStorageFile(this)
 
         val increment = 63f / 120f
         val times = (0..120).map {
@@ -107,3 +108,8 @@ class DemoActivity : FragmentActivity() {
 
 fun String.parseExternalStorageFile(): Uri =
     Uri.parse("${Environment.getExternalStorageDirectory()}/$this")
+
+fun String.parseAssetFile(): Uri = Uri.parse("file:///android_asset/$this")
+
+fun String.parseInternalStorageFile(context: Context): Uri =
+    Uri.parse("${context.filesDir.absolutePath}/$this")

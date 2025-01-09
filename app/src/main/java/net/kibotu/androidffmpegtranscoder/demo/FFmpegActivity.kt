@@ -1,22 +1,20 @@
 package net.kibotu.androidffmpegtranscoder.demo
 
-import android.Manifest
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
-import net.kibotu.androidffmpegtranscoder.mcvideoeditor.MediaCodecTranscoder
-import net.kibotu.androidffmpegtranscoder.mcvideoeditor.MediaConfig
-import net.kibotu.androidffmpegtranscoder.ffmpeg.EncodingConfig
-import net.kibotu.androidffmpegtranscoder.ffmpeg.FFMpegTranscoder
-import net.kibotu.androidffmpegtranscoder.ffmpeg.Progress
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import net.kibotu.androidffmpegtranscoder.demo.databinding.ActivityMainBinding
-import net.kibotu.androidffmpegtranscoder.demo.permissions.RxPermissions
+import net.kibotu.androidffmpegtranscoder.ffmpeg.EncodingConfig
+import net.kibotu.androidffmpegtranscoder.ffmpeg.FFMpegTranscoder
+import net.kibotu.androidffmpegtranscoder.ffmpeg.Progress
+import net.kibotu.androidffmpegtranscoder.mcvideoeditor.MediaCodecTranscoder
+import net.kibotu.androidffmpegtranscoder.mcvideoeditor.MediaConfig
 import net.kibotu.logger.Logger
 import net.kibotu.logger.TAG
 import java.io.File
@@ -26,8 +24,8 @@ import kotlin.math.roundToInt
 
 
 class FFmpegActivity : AppCompatActivity() {
-    
-    private lateinit var binding : ActivityMainBinding
+
+    private lateinit var binding: ActivityMainBinding
 
     var subscription: CompositeDisposable = CompositeDisposable()
 
@@ -35,33 +33,19 @@ class FFmpegActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        checkWriteExternalStoragePermission()
+        run()
     }
 
     // region location permission
 
-    protected fun checkWriteExternalStoragePermission() {
-        RxPermissions(this)
-            .requestEachCombined(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-            .subscribe({
-                if (it.granted)
-                    onWritePermissionGranted()
-            }, {
-                Logger.v("permission $it" )
-            })
-            .addTo(subscription)
-    }
+    private fun run() {
 
-    private fun onWritePermissionGranted() {
+        binding.initFfmpeg.text =
+            "FFmpeg is ${if (FFMpegTranscoder.isSupported(this)) "" else "not"} supported."
 
-        binding.initFfmpeg.text = "FFmpeg is ${if (FFMpegTranscoder.isSupported(this)) "" else "not"} supported."
-
-        val frameFolder = "Download/process/".parseExternalStorageFile()
-        val inputVideo = "Download/walkaround.mp4".parseExternalStorageFile()
-        val outputVideo = "Download/stabilizedOutput_${System.currentTimeMillis()}.mp4".parseExternalStorageFile()
+        val frameFolder = "transcoding/process".parseInternalStorageFile(this)
+        val inputVideo = "input/source_video.mp4".parseInternalStorageFile(this)
+        val outputVideo = "transcoding/output/output_${System.currentTimeMillis()}.mp4".parseInternalStorageFile(this)
 
         extractFrames(inputVideo, frameFolder)
 
@@ -76,11 +60,11 @@ class FFmpegActivity : AppCompatActivity() {
         }
 
         binding.deleteFolder.setOnClickListener {
-            Logger.v("delete folder = ${FFMpegTranscoder.deleteExtractedFrameFolder(frameFolder)}" )
+            Logger.v("delete folder = ${FFMpegTranscoder.deleteExtractedFrameFolder(frameFolder)}")
         }
 
         binding.deleteAll.setOnClickListener {
-            Logger.v( "delete all = ${FFMpegTranscoder.deleteAllProcessFiles(this)}" )
+            Logger.v("delete all = ${FFMpegTranscoder.deleteAllProcessFiles(this)}")
         }
     }
 
@@ -97,15 +81,16 @@ class FFmpegActivity : AppCompatActivity() {
                     extractFramesProgress.isVisible = true
                     extractFramesProgress.setProgress(it.progress)
 
-                    Logger.v( "Analyze $it" )
+                    Logger.v("Analyze $it")
 
-                    output.text = "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${output.text}"
+                    output.text =
+                        "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${output.text}"
 
                 }, {
-                    Logger.v(  "transcode fails ${it.message}")
+                    Logger.v("transcode fails ${it.message}")
                     it.printStackTrace()
                 }, {
-                    Logger.v(  "transcode on complete ")
+                    Logger.v("transcode on complete ")
 
                     FFMpegTranscoder.stabilize(
                         context = this@FFmpegActivity,
@@ -116,17 +101,18 @@ class FFmpegActivity : AppCompatActivity() {
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({
 
-                            extractFramesProgress.isVisible =true
+                            extractFramesProgress.isVisible = true
                             extractFramesProgress.setProgress(it.progress)
 
-                            Logger.v(  "Stabilize $it")
+                            Logger.v("Stabilize $it")
 
-                            output.text = "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${output.text}"
+                            output.text =
+                                "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${output.text}"
 
                         }, {
-                            Logger.v(  "transcode fails ${it.message}")
+                            Logger.v("transcode fails ${it.message}")
                             it.printStackTrace()
-                        }, { Logger.v(  "transcode on complete ") })
+                        }, { Logger.v("transcode on complete ") })
                         .addTo(subscription)
                 })
                 .addTo(subscription)
@@ -136,7 +122,7 @@ class FFmpegActivity : AppCompatActivity() {
 
     private fun extractFrames(inputVideo: Uri, frameFolder: Uri) {
 
-        Logger.v(  "uri=${inputVideo.assetFileExists}")
+        Logger.v("uri=${inputVideo.assetFileExists}")
 
         binding.extractFrames.setOnClickListener {
 
@@ -146,8 +132,10 @@ class FFmpegActivity : AppCompatActivity() {
                 increment * it.toDouble()
             }
 
-
-            extractByFFMpeg(inputVideo,frameFolder)   //Uri.parse(copyAssetFileToCache("walkaround.mp4")!!.path)
+            extractByFFMpeg(
+                inputVideo,
+                frameFolder
+            )   //Uri.parse(copyAssetFileToCache("walkaround.mp4")!!.path)
             //extactByMediaCodec(times, inputVideo, frameFolder)
 
         }
@@ -156,16 +144,16 @@ class FFmpegActivity : AppCompatActivity() {
     private fun mergeFrames(frameFolder: Uri, outputVideo: Uri) {
 
         binding.makeVideo.setOnClickListener {
-            mergeByFFMpeg(frameFolder,outputVideo)
+            mergeByFFMpeg(frameFolder, outputVideo)
             //mergeByMediaCodec(frameFolder, outputVideo)
         }
     }
 
     private fun transcode(inputVideo: Uri, outputVideo: Uri) {
 
-        binding.transcodeVideo.setOnClickListener() {
+        binding.transcodeVideo.setOnClickListener {
 
-            Logger.v(  "transcode $inputVideo -> $outputVideo")
+            Logger.v("transcode $inputVideo -> $outputVideo")
 
             binding.output.text = ""
 
@@ -177,12 +165,12 @@ class FFmpegActivity : AppCompatActivity() {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
 
-                    Logger.v(  "transcode $it")
+                    Logger.v("transcode $it")
 
                 }, {
-                    Logger.v(  "transcode fails ${it.message}")
+                    Logger.v("transcode fails ${it.message}")
                     it.printStackTrace()
-                }, { Logger.v(  "transcode on complete ") })
+                }, { Logger.v("transcode on complete ") })
                 .addTo(subscription)
         }
     }
@@ -190,7 +178,7 @@ class FFmpegActivity : AppCompatActivity() {
     //region ffmpeg
 
     private fun extractByFFMpeg(inputVideo: Uri, frameFolder: Uri) {
-        Logger.v(  "extractFramesFromVideo $inputVideo -> $frameFolder")
+        Logger.v("extractFramesFromVideo $inputVideo -> $frameFolder")
 
         val increment = 63f / 120f
 
@@ -200,7 +188,13 @@ class FFmpegActivity : AppCompatActivity() {
 
         binding.output.text = ""
 
-        FFMpegTranscoder.extractFramesFromVideo(context = this, frameTimes = times.map { it.toString() }, inputVideo = inputVideo, id = "12345", outputDir = frameFolder)
+        FFMpegTranscoder.extractFramesFromVideo(
+            context = this,
+            frameTimes = times.map { it.toString() },
+            inputVideo = inputVideo,
+            id = "12345",
+            outputDir = frameFolder
+        )
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe({
@@ -208,23 +202,22 @@ class FFmpegActivity : AppCompatActivity() {
                 binding.extractFramesProgress.isVisible = true
                 binding.extractFramesProgress.setProgress(it.progress)
 
-                Logger.v(  "extract frames $it")
+                Logger.v("extract frames $it")
 
-                binding.output.text = "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
-
-
+                binding.output.text =
+                    "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
             }, {
-                Logger.v(  "extracting frames fail ${it.message}")
+                Logger.v("extracting frames fail ${it.message}")
 
                 it.printStackTrace()
             }, {
-                Logger.v(  "extractFramesFromVideo on complete")
+                Logger.v("extractFramesFromVideo on complete")
             })
             .addTo(subscription)
     }
 
     private fun mergeByFFMpeg(frameFolder: Uri, outputVideo: Uri) {
-        Logger.v(  "mergeFrames $frameFolder -> $outputVideo")
+        Logger.v("mergeFrames $frameFolder -> $outputVideo")
 
         binding.output.text = ""
 
@@ -243,13 +236,14 @@ class FFmpegActivity : AppCompatActivity() {
                 binding.mergeFramesProgress.isVisible = true
                 binding.mergeFramesProgress.setProgress(it.progress)
 
-                Logger.v(  "extract frames $it")
+                Logger.v("extract frames $it")
 
-                binding.output.text = "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
+                binding.output.text =
+                    "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
 
             }, {
-                Logger.v(  "creating video fails ${it.message}")
-            }, { Logger.v(  "createVideoFromFrames on complete ") })
+                Logger.v("creating video fails ${it.message}")
+            }, { Logger.v("createVideoFromFrames on complete ") })
             .addTo(subscription)
     }
     //endregion
@@ -305,15 +299,16 @@ class FFmpegActivity : AppCompatActivity() {
                 binding.mergeFramesProgress.isVisible = true
                 binding.mergeFramesProgress.setProgress(it.progress)
 
-                Logger.v(  "merge frames $it")
+                Logger.v("merge frames $it")
 
-                binding.output.text = "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
-
-            }, {
-                Logger.v(  "creating video fails ${it.message}")
+                binding.output.text =
+                    "${(it.duration / 1000f).roundToInt()} s ${it.message?.trimMargin()}\n${binding.output.text}"
 
             }, {
-                Logger.v(  "createVideoFromFrames on complete ")
+                Logger.v("creating video fails ${it.message}")
+
+            }, {
+                Logger.v("createVideoFromFrames on complete ")
             })
             .addTo(subscription)
 
